@@ -16,7 +16,7 @@ env:
   REPO_BRANCH: agent/cudy-tr3600-v1-6.12
   # 配置文件路径（相对于仓库根目录）
   CONFIG_FILE: mt7987-cudy-tr3600-iStore.config
-  DIY_P1_SH: diy-part1.sh
+  DIY_P1_SH: diy-iStore-part1.sh
   DIY_P2_SH: diy-iStore-part2.sh
   DIY_P3_SH: diy-partX.sh
   TZ: Asia/Shanghai
@@ -134,15 +134,17 @@ jobs:
         echo "========================================"
 
     # =========================================================
-    # 8. 生成默认配置
+    # 8. oldconfig 保留自定义勾选，禁止 make defconfig
     # =========================================================
-    - name: Generate Defconfig
+    - name: Generate Oldconfig
       run: |
         cd openwrt
-        make defconfig
-        echo "✅ defconfig 生成完成"
-        # 显示最终配置
-        echo "========================================"
+        make oldconfig
+        echo "✅ oldconfig 生成完成"
+        # 校验iStore是否仍然=y
+        echo "==== iStore config check ===="
+        grep -E "luci-app-store|luci-i18n-store-zh-cn" .config
+        echo "============================"
         echo "📋 最终配置摘要:"
         grep -E "CONFIG_TARGET_DEVICE|CONFIG_PACKAGE_.*passwall|CONFIG_PACKAGE_luci" .config | head -20
         echo "========================================"
@@ -267,7 +269,7 @@ jobs:
         | 📄 配置文件 | \`${{ env.CONFIG_FILE }}\` |
 
         ### 📦 包含插件
-        - ✅ **Passwall** (含 Xray & Sing-Box 支持)
+        - ✅ **Passwall** (含 Xray & Sing‑Box 支持)
         - ✅ **Passwall2**
         - ✅ **OpenClash**
         - ✅ **LuCI** 中文界面
@@ -278,7 +280,7 @@ jobs:
         ### 🔧 刷机指南
         1. 下载对应固件文件
         2. 通过 Cudy 网页后台或 Uboot 刷入
-        3. 默认 IP: \`192.168.1.1\`
+        3. 默认 IP: \`192.168.6.1\`
         4. 默认密码: \`password\`
 
         ### ⚠️ 免责声明

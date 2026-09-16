@@ -1,5 +1,4 @@
 name: Build Cudy TR3600 OpenWrt Docker iStore Amin
-
 on:
   workflow_dispatch:
     inputs:
@@ -7,7 +6,6 @@ on:
         description: 'SSH connection to Actions'
         required: false
         default: 'false'
-
 env:
   DEVICE_NAME: Cudy-TR3600
   DEVICE_MODEL: Cudy TR3600
@@ -16,28 +14,24 @@ env:
   REPO_BRANCH: agent/cudy-tr3600-v1-6.12
   # 配置文件路径（相对于仓库根目录）
   CONFIG_FILE: mt7987-cudy-tr3600-docker-iStore.config
-  DIY_P1_SH: diy-docker-part1.sh
+  DIY_P1_SH: diy-docker-iStore-part1.sh
   DIY_P2_SH: diy-docker-iStore-part2.sh
   DIY_P3_SH: diy-partX.sh
   TZ: Asia/Shanghai
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-
 permissions:
   contents: write
   actions: write
-
 jobs:
   build:
     runs-on: ubuntu-22.04
     timeout-minutes: 350
-
     steps:
     # =========================================================
     # 1. 检出仓库
     # =========================================================
     - name: Checkout Repository
       uses: actions/checkout@v4
-
     # =========================================================
     # 2. 释放磁盘空间 & 安装依赖
     # =========================================================
@@ -48,31 +42,25 @@ jobs:
         sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc \
           /opt/hostedtoolcache/CodeQL /usr/local/share/boost /usr/lib/jvm
         sudo docker image prune --all --force
-
         sudo swapoff -a && sudo rm -f /mnt/swapfile
         sudo fallocate -l 8G /mnt/swapfile
         sudo chmod 600 /mnt/swapfile
         sudo mkswap /mnt/swapfile && sudo swapon /mnt/swapfile
-
         sudo -E apt-get -qq update
         sudo -E apt-get -qq install -y build-essential libncurses5-dev gawk \
           git subversion libssl-dev gettext unzip zlib1g-dev file python3 \
           clang llvm dwarves flex bison dos2unix
-
         sudo timedatectl set-timezone "$TZ"
-
         echo "磁盘空间:"
         df -hT
         echo "内存/Swap:"
         free -h
-
     # =========================================================
     # 3. 克隆源码
     # =========================================================
     - name: Clone Source Code
       run: |
         git clone -b "$REPO_BRANCH" --single-branch --depth=1 "$REPO_URL" openwrt
-
     # =========================================================
     # 4. 执行 DIY 脚本 (diy-docker-part1.sh)
     # =========================================================
@@ -87,7 +75,6 @@ jobs:
         else
           echo "⚠️ 跳过: $DIY_P1_SH (文件不存在)"
         fi
-
     # =========================================================
     # 5. 更新 & 安装 Feeds
     # =========================================================
@@ -96,7 +83,6 @@ jobs:
         cd openwrt
         ./scripts/feeds update -a
         ./scripts/feeds install -a
-
     # =========================================================
     # 6. 执行 DIY 脚本 (diy-docker-iStore-part2.sh)
     # =========================================================
@@ -111,7 +97,6 @@ jobs:
         else
           echo "⚠️ 跳过: $DIY_P2_SH (文件不存在)"
         fi
-
     # =========================================================
     # 7. 复制配置文件 (使用 CONFIG_FILE)
     # =========================================================
@@ -132,21 +117,21 @@ jobs:
         grep "CONFIG_TARGET_DEVICE" .config || echo "⚠️ 未找到设备配置"
         grep "CONFIG_PACKAGE_luci-app-passwall" .config || echo "⚠️ 未找到 Passwall 配置"
         echo "========================================"
-
     # =========================================================
-    # 8. 生成默认配置
+    # 8. oldconfig 保留自定义勾选，禁止 make defconfig
     # =========================================================
-    - name: Generate Defconfig
+    - name: Generate Oldconfig
       run: |
         cd openwrt
-        make defconfig
-        echo "✅ defconfig 生成完成"
-        # 显示最终配置
-        echo "========================================"
+        make oldconfig
+        echo "✅ oldconfig 生成完成"
+        # 校验iStore是否仍然=y
+        echo "==== iStore config check ===="
+        grep -E "luci-app-store|luci-i18n-store-zh-cn" .config
+        echo "============================"
         echo "📋 最终配置摘要:"
         grep -E "CONFIG_TARGET_DEVICE|CONFIG_PACKAGE_.*passwall|CONFIG_PACKAGE_luci" .config | head -20
         echo "========================================"
-
     # =========================================================
     # 9. 执行 DIY 脚本 (diy-partX.sh)
     # =========================================================
@@ -161,14 +146,12 @@ jobs:
         else
           echo "⚠️ 跳过: $DIY_P3_SH (文件不存在)"
         fi
-
     # =========================================================
     # 10. SSH 调试（可选）
     # =========================================================
     - name: SSH Debug Session
       uses: mxschmitt/action-tmate@v3
       if: github.event.inputs.ssh == 'true'
-
     # =========================================================
     # 11. 下载软件包
     # =========================================================
@@ -177,7 +160,6 @@ jobs:
         cd openwrt
         make download -j8 || make download -j1 V=s
         find dl -size -1024c -exec rm -f {} \;
-
     # =========================================================
     # 12. 编译固件
     # =========================================================
@@ -208,7 +190,6 @@ jobs:
         echo "📅 编译时间: $(date '+%Y-%m-%d %H:%M:%S')"
         df -hT /
         echo "========================================"
-
     # =========================================================
     # 13. 整理固件文件
     # =========================================================
@@ -223,7 +204,6 @@ jobs:
         
         echo "📦 固件文件列表:"
         ls -lah
-
     # =========================================================
     # 14. 上传固件到 Artifacts
     # =========================================================
@@ -233,7 +213,6 @@ jobs:
       with:
         name: ${{ env.FIRMWARE_PREFIX }}-Firmware-${{ env.BUILD_TIMESTAMP }}
         path: ${{ env.FIRMWARE_DIR }}
-
     # =========================================================
     # 15. 生成 Release Tag 和说明
     # =========================================================
@@ -250,10 +229,8 @@ jobs:
         RELEASE_TAG=$(echo "$RELEASE_TAG" | sed 's/[^a-zA-Z0-9._-]/-/g')
         
         echo "release_tag=${RELEASE_TAG}" >> "$GITHUB_OUTPUT"
-
         cat <<EOF > release.txt
         ## 🚀 ${{ env.DEVICE_MODEL }} OpenWrt Docker iStore 固件 (Amin 定制版)
-
         ### 📋 编译信息
         | 项目 | 详情 |
         |------|------|
@@ -265,7 +242,6 @@ jobs:
         | ⏰ 编译时间 | $(date '+%Y-%m-%d %H:%M:%S') (Asia/Shanghai) |
         | 🏷️ 版本标签 | \`${RELEASE_TAG}\` |
         | 📄 配置文件 | \`${{ env.CONFIG_FILE }}\` |
-
         ### 📦 包含插件
         - ✅ **Passwall** (含 Xray & Sing-Box 支持)
         - ✅ **Passwall2**
@@ -275,24 +251,19 @@ jobs:
         - ✅ **2.5G 网卡驱动** (RTL8221)
         - ✅ **Cudy TR3600 风扇控制**
         - ✅ **iStore 应用商店**
-
         ### 🔧 刷机指南
         1. 下载对应固件文件
         2. 通过 Cudy 网页后台或 Uboot 刷入
-        3. 默认 IP: \`192.168.1.1\`
+        3. 默认 IP: \`192.168.6.1\`
         4. 默认密码: \`password\`
-
         ### ⚠️ 免责声明
         - 刷机有风险，请谨慎操作
         - 建议刷机前备份原厂固件
         - 本固件仅供学习研究使用
-
         ---
         > 📌 **固件标识**: Docker iStore Amin 定制版 | 构建时间: $(date '+%Y-%m-%d %H:%M:%S')
         EOF
-
         echo "status=success" >> "$GITHUB_OUTPUT"
-
     # =========================================================
     # 16. 创建 GitHub Release 并上传固件
     # =========================================================
@@ -312,7 +283,6 @@ jobs:
           ${{ env.FIRMWARE_DIR }}/*.sha256sums
         draft: false
         prerelease: false
-
     # =========================================================
     # 17. 清理旧的 Releases（保留最近 10 个）
     # =========================================================

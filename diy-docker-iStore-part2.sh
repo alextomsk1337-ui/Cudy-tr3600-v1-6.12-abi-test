@@ -183,11 +183,6 @@ sed -i 's/192.168.1.1/192.168.6.1/g' package/base-files/files/bin/config_generat
 
 echo "✅ SSH2 配置完成。"
 
-# =========================================================
-# 添加 istore feed 到 feeds.conf.default
-# =========================================================
-echo "src-git istore https://github.com/linkease/istore;main" >> feeds.conf.default
-
 # 设置默认LuCI主题为argon
 sed -i 's/luci.main.theme=bootstrap/luci.main.theme=argon/' package/base-files/files/etc/config/luci
 # 备份兼容写法，防止上面没匹配到
