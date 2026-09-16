@@ -243,19 +243,20 @@ jobs:
         | 🏷️ 版本标签 | \`${RELEASE_TAG}\` |
         | 📄 配置文件 | \`${{ env.CONFIG_FILE }}\` |
         ### 📦 包含插件
-        - ✅ **Passwall** (含 Xray & Sing-Box 支持)
+        - ✅ **Passwall**
         - ✅ **Passwall2**
         - ✅ **OpenClash**
         - ✅ **LuCI** 中文界面
+        - ✅ **USB+F50 等驱动**
+        - ✅ **Cudy TR3600风扇控制**
         - ✅ **Docker** 支持
-        - ✅ **2.5G 网卡驱动** (RTL8221)
-        - ✅ **Cudy TR3600 风扇控制**
         - ✅ **iStore 应用商店**
+
         ### 🔧 刷机指南
         1. 下载对应固件文件
         2. 通过 Cudy 网页后台或 Uboot 刷入
         3. 默认 IP: \`192.168.6.1\`
-        4. 默认密码: \`password\`
+        4. 默认密码: \`password\`（空密码版本直接回车登录）
         ### ⚠️ 免责声明
         - 刷机有风险，请谨慎操作
         - 建议刷机前备份原厂固件
