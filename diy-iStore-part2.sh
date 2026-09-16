@@ -28,10 +28,8 @@ sed -i 's/192.168.1.1/192.168.6.1/g' package/base-files/files/bin/config_generat
 # =========================================================
 
 # =========================================================
-# 添加 iStore 源
+# 添加 istore feed 到 feeds.conf.default
 # =========================================================
-
-echo "📦 添加 iStore 源..."
 echo "src-git istore https://github.com/linkease/istore;main" >> feeds.conf.default
 
 # 设置默认LuCI主题为argon
