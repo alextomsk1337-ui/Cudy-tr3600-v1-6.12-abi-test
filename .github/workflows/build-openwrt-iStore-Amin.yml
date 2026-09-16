@@ -248,7 +248,7 @@ jobs:
         BUILD_TIME="$BUILD_TIMESTAMP"
         DEVICE="$DEVICE_NAME"
         
-        RELEASE_TAG="${DEVICE}-Amin-${AUTHOR}-${BRANCH}-${BUILD_TIME}"
+        RELEASE_TAG="${DEVICE}-iStore-Amin-${AUTHOR}-${BRANCH}-${BUILD_TIME}"
         RELEASE_TAG=$(echo "$RELEASE_TAG" | sed 's/[^a-zA-Z0-9._-]/-/g')
         
         echo "release_tag=${RELEASE_TAG}" >> "$GITHUB_OUTPUT"
