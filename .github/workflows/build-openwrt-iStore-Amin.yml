@@ -233,7 +233,7 @@ jobs:
       uses: actions/upload-artifact@v4
       if: steps.organize.outputs.status == 'success' && !cancelled()
       with:
-        name: ${{ env.DEVICE_NAME }}-iStore-Amin-${{ env.AUTHOR }}-${{ env.BRANCH }}-${{ env.BUILD_TIMESTAMP }}
+        name: ${{ env.DEVICE_NAME }}-iStore-Amin-${{ env.BUILD_TIMESTAMP }}
         path: ${{ env.FIRMWARE_DIR }}
 
     # =========================================================

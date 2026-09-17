@@ -211,7 +211,7 @@ jobs:
       uses: actions/upload-artifact@v4
       if: steps.organize.outputs.status == 'success' && !cancelled()
       with:
-        name: ${{ env.DEVICE_NAME }}-iStore-Docker-Amin-${{ env.AUTHOR }}-${{ env.BRANCH }}-${{ env.BUILD_TIMESTAMP }}
+        name: ${{ env.DEVICE_NAME }}-Docker-iStore-Amin-${{ env.BUILD_TIMESTAMP }}
         path: ${{ env.FIRMWARE_DIR }}
     # =========================================================
     # 15. 生成 Release Tag 和说明

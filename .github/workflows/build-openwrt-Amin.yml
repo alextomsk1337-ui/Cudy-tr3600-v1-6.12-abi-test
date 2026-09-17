@@ -209,7 +209,7 @@ jobs:
       uses: actions/upload-artifact@v4
       if: steps.organize.outputs.status == 'success' && !cancelled()
       with:
-        name: ${{ env.FIRMWARE_PREFIX }}-Firmware-${{ env.BUILD_TIMESTAMP }}
+        name: ${{ env.DEVICE_NAME }}-Amin-${{ env.BUILD_TIMESTAMP }}
         path: ${{ env.FIRMWARE_DIR }}
     # =========================================================
     # 15. 生成 Release Tag 和说明
