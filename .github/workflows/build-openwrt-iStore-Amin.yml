@@ -74,9 +74,9 @@ jobs:
         git clone -b "$REPO_BRANCH" --single-branch --depth=1 "$REPO_URL" openwrt
 
     # =========================================================
-    # 4. 执行 DIY 脚本 (diy-part1.sh)
+    # 4. 执行 DIY 脚本 (diy-iStore-part1.sh)
     # =========================================================
-    - name: Execute diy-part1.sh
+    - name: Execute diy-iStore-part1.sh
       run: |
         cd openwrt
         if [ -f "../$DIY_P1_SH" ]; then
@@ -98,9 +98,9 @@ jobs:
         ./scripts/feeds install -a
 
     # =========================================================
-    # 6. 执行 DIY 脚本 (diy-part2.sh)
+    # 6. 执行 DIY 脚本 (diy-iStore-part2.sh)
     # =========================================================
-    - name: Execute diy-part2.sh
+    - name: Execute diy-iStore-part2.sh
       run: |
         cd openwrt
         if [ -f "../$DIY_P2_SH" ]; then
@@ -233,7 +233,7 @@ jobs:
       uses: actions/upload-artifact@v4
       if: steps.organize.outputs.status == 'success' && !cancelled()
       with:
-        name: ${{ env.FIRMWARE_PREFIX }}-Firmware-${{ env.BUILD_TIMESTAMP }}
+        name: ${{ env.DEVICE_NAME }}-iStore-Amin-${{ env.AUTHOR }}-${{ env.BRANCH }}-${{ env.BUILD_TIMESTAMP }}
         path: ${{ env.FIRMWARE_DIR }}
 
     # =========================================================
@@ -323,6 +323,6 @@ jobs:
       with:
         keep_latest: 10
         delete_tags: true
-        delete_tag_pattern: '^${{ env.DEVICE_NAME }}-Amin-'
+        delete_tag_pattern: '^${{ env.DEVICE_NAME }}-iStore-Amin-'
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

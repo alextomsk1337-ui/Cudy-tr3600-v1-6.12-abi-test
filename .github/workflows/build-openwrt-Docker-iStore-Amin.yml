@@ -62,9 +62,9 @@ jobs:
       run: |
         git clone -b "$REPO_BRANCH" --single-branch --depth=1 "$REPO_URL" openwrt
     # =========================================================
-    # 4. 执行 DIY 脚本 (diy-docker-part1.sh)
+    # 4. 执行 DIY 脚本 (diy-docker-iStore-part1.sh)
     # =========================================================
-    - name: Execute diy-docker-part1.sh
+    - name: Execute diy-docker-iStore-part1.sh
       run: |
         cd openwrt
         if [ -f "../$DIY_P1_SH" ]; then
@@ -211,7 +211,7 @@ jobs:
       uses: actions/upload-artifact@v4
       if: steps.organize.outputs.status == 'success' && !cancelled()
       with:
-        name: ${{ env.FIRMWARE_PREFIX }}-Firmware-${{ env.BUILD_TIMESTAMP }}
+        name: ${{ env.DEVICE_NAME }}-iStore-Docker-Amin-${{ env.AUTHOR }}-${{ env.BRANCH }}-${{ env.BUILD_TIMESTAMP }}
         path: ${{ env.FIRMWARE_DIR }}
     # =========================================================
     # 15. 生成 Release Tag 和说明
@@ -293,6 +293,6 @@ jobs:
       with:
         keep_latest: 10
         delete_tags: true
-        delete_tag_pattern: '^${{ env.DEVICE_NAME }}-Amin-'
+        delete_tag_pattern: '^${{ env.DEVICE_NAME }}-iStore-Docker-Amin-'
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
