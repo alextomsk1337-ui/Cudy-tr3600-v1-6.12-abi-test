@@ -1,0 +1,111 @@
+name: Verify exact TR3600 ABI and build DW5821e serial kmods
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  verify-kmods:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 350
+    steps:
+      - name: Checkout original build recipe
+        uses: actions/checkout@v4
+        with:
+          repository: liangcanming/Cudy-tr3600-v1-6.12
+          ref: 5c5a512ffefd639ec6f908ee01b583c6badf66be
+          path: builder
+
+      - name: Checkout original firmware metadata
+        uses: actions/checkout@v4
+        with:
+          path: original
+
+      - name: Verify original firmware metadata
+        run: |
+          set -euxo pipefail
+          cd original
+          printf '%s  %s\n' \
+            D2EBB807D53E2CFA0F3E3F17432D883D61E594180950D0F194045C8AEB7998DA config.buildinfo \
+            1FE5D77725C7D4CAE1529198FB31D49618471F318957AF8F2941CBA565408937 feeds.buildinfo \
+            24C9F91325AD32F2BD99537B7A89ABA77A4E2355224F59A4DFB2D73F3083BC5B version.buildinfo \
+            | sha256sum -c -
+
+      - name: Checkout exact OpenWrt source
+        uses: actions/checkout@v4
+        with:
+          repository: soapmancn/openwrt
+          ref: 046aec0dccd90f5a156cb8e9725c121c81955dd3
+          path: openwrt
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get -qq update
+          sudo apt-get -qq install -y build-essential libncurses5-dev gawk git \
+            subversion libssl-dev gettext unzip zlib1g-dev file python3 \
+            clang llvm dwarves flex bison dos2unix rsync wget
+
+      - name: Recreate original build configuration
+        run: |
+          set -euxo pipefail
+          cd openwrt
+          test "$(git rev-parse HEAD)" = 046aec0dccd90f5a156cb8e9725c121c81955dd3
+          cp ../original/feeds.buildinfo feeds.conf
+          bash ../builder/diy-part1.sh
+          ./scripts/feeds update -a
+          ./scripts/feeds install -a
+          bash ../builder/diy-part2.sh
+          cp ../original/config.buildinfo .config
+          make defconfig
+          bash ../builder/diy-partX.sh
+          make download -j8 || make download -j1 V=s
+
+      - name: Build original kernel and verify ABI
+        run: |
+          set -euxo pipefail
+          mkdir -p diagnostics
+          cd openwrt
+          make -j"$(nproc)" target/linux/compile
+          kernel_dir="$(find build_dir/target-* -type d -name linux-6.12.94 -print -quit)"
+          test -n "$kernel_dir"
+          test -f "$kernel_dir/.vermagic"
+          test -f "$kernel_dir/.config"
+          cp "$kernel_dir/.vermagic" ../diagnostics/original.vermagic
+          grep -E '^CONFIG_USB_SERIAL(=|_)' "$kernel_dir/.config" \
+            > ../diagnostics/original-usb-serial.config || true
+          actual="$(cat "$kernel_dir/.vermagic")"
+          echo "Original kernel ABI: $actual"
+          test "$actual" = a3746eb1ebd6219722ca427a05ca1da8
+          grep -qx 'CONFIG_USB_SERIAL=m' "$kernel_dir/.config"
+          grep -qx 'CONFIG_USB_SERIAL_WWAN=m' "$kernel_dir/.config"
+          grep -qx 'CONFIG_USB_SERIAL_OPTION=m' "$kernel_dir/.config"
+
+      - name: Package serial modules without changing kernel ABI
+        run: |
+          set -euxo pipefail
+          cd openwrt
+          printf '%s\n' \
+            'CONFIG_PACKAGE_kmod-usb-serial=m' \
+            'CONFIG_PACKAGE_kmod-usb-serial-wwan=m' \
+            'CONFIG_PACKAGE_kmod-usb-serial-option=m' >> .config
+          make defconfig
+          make -j"$(nproc)" target/linux/compile
+          kernel_dir="$(find build_dir/target-* -type d -name linux-6.12.94 -print -quit)"
+          cp "$kernel_dir/.vermagic" ../diagnostics/packaged.vermagic
+          test "$(cat "$kernel_dir/.vermagic")" = a3746eb1ebd6219722ca427a05ca1da8
+          make -j"$(nproc)" package/kernel/linux/compile
+          mkdir -p ../diagnostics/packages
+          find bin -type f -name 'kmod-usb-serial*.apk' \
+            -exec cp -t ../diagnostics/packages {} +
+          test -n "$(find ../diagnostics/packages -name 'kmod-usb-serial*.apk' -print -quit)"
+
+      - name: Upload ABI evidence and matching packages
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: TR3600-DW5821e-ABI-check
+          path: diagnostics/
+          if-no-files-found: warn
