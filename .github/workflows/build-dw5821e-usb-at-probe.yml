@@ -1,0 +1,29 @@
+name: Build read-only DW5821e USB AT probe
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install official AArch64 cross compiler
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends gcc-aarch64-linux-gnu libc6-dev-arm64-cross
+      - name: Compile static userspace probe
+        run: |
+          aarch64-linux-gnu-gcc -static -O2 -Wall -Wextra -Werror \
+            -o dw5821e-usb-at-probe dw5821e-usb-at-probe.c
+          file dw5821e-usb-at-probe
+          sha256sum dw5821e-usb-at-probe > dw5821e-usb-at-probe.sha256
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dw5821e-usb-at-probe-aarch64-static
+          path: |
+            dw5821e-usb-at-probe
+            dw5821e-usb-at-probe.sha256
+          retention-days: 7
