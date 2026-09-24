@@ -68,7 +68,9 @@ jobs:
           set -euxo pipefail
           mkdir -p diagnostics
           cd openwrt
-          make -j"$(nproc)" target/linux/compile
+          make -j"$(nproc)" tools/install || make -j1 V=s tools/install
+          make -j"$(nproc)" toolchain/install || make -j1 V=s toolchain/install
+          make -j"$(nproc)" target/linux/compile || make -j1 V=s target/linux/compile
           kernel_dir="$(find build_dir/target-* -type d -name linux-6.12.94 -print -quit)"
           test -n "$kernel_dir"
           test -f "$kernel_dir/.vermagic"
